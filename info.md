@@ -2,4 +2,5 @@
 #### 固件地址 `192.168.66.1`
 #### 用户名 `root` 密码：无
 #### 默认软件包大小 2GB 
-#### 默认插件: Passwall , AdGuardHome , MosDNS
+#### 默认插件: Passwall 
+#### 默认无 DOCKER 
