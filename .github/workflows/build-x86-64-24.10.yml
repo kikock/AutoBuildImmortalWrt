@@ -2,7 +2,7 @@ name: build-x86-64-immortalwrt-24.10
 
 on:
   schedule:
-    - cron: '59 23 * * *'  # 每天 23:59 运行
+    - cron: '59 15 * * *'  # 每天 23:59 运行
   workflow_dispatch:        # 保留手动触发选项
     inputs:
       profile:
