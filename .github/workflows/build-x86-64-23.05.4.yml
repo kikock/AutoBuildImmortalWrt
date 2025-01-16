@@ -1,18 +1,16 @@
 name: build-x86-64-immortalwrt-23.05.4
 
 on:
-  schedule:
-    - cron: '59 23 * * *'
   workflow_dispatch:
     inputs:
       profile:
         description: '请输入要编译固件大小 单位(MB)'
         required: true
-        default: '2048'
+        default: '1024'
       include_docker:
         description: |
           是否编译 Docker 插件
-        required: false
+        required: true
         default: 'no'
         type: choice
         options:

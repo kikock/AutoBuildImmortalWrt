@@ -2,22 +2,13 @@ name: build-x86-64-immortalwrt-24.10
 
 on:
   schedule:
-    - cron: '59 0 * * *'
-  workflow_dispatch:
+    - cron: '59 15 * * *'  # 每天 23:59 运行
+  workflow_dispatch:        # 保留手动触发选项
     inputs:
       profile:
         description: '请输入要编译固件大小 单位(MB)'
         required: true
-        default: '2048'
-      include_docker:
-        description: |
-          是否编译 Docker 插件
-        required: false
-        default: 'no'
-        type: choice
-        options:
-          - 'yes'
-          - 'no'
+        default: '1024'
 
 jobs:
   build:
@@ -32,23 +23,24 @@ jobs:
 
       - name: Build ImmortalWrt-x86-64-eif
         run: |
-          profiles="${{ github.event.inputs.profile }}"
-          include_docker="${{ github.event.inputs.include_docker }}"
-          IFS=',' read -r -a profile_array <<< "$profiles"
+          # 如果是计划任务触发，使用默认配置
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            profile="1024"
+          else
+            profile="${{ github.event.inputs.profile }}"
+          fi
           
-          for profile in "${profile_array[@]}"; do
-            echo "Building for profile: $profile"
-            
-            docker run --rm -i \
-              --user root \
-              -v "${{ github.workspace }}/bin:/home/build/immortalwrt/bin" \
-              -v "${{ github.workspace }}/files:/home/build/immortalwrt/files" \
-              -v "${{ github.workspace }}/x86-64/imm.config:/home/build/immortalwrt/.config" \
-              -v "${{ github.workspace }}/x86-64/24.10/build.sh:/home/build/immortalwrt/build.sh" \
-              -e PROFILE=$profile \
-              -e INCLUDE_DOCKER=$include_docker \
-              immortalwrt/imagebuilder:x86-64-openwrt-24.10.0-rc3 /bin/bash /home/build/immortalwrt/build.sh
-          done
+          echo "Building for profile: $profile"
+          
+          docker run --rm -i \
+            --user root \
+            -v "${{ github.workspace }}/bin:/home/build/immortalwrt/bin" \
+            -v "${{ github.workspace }}/files:/home/build/immortalwrt/files" \
+            -v "${{ github.workspace }}/x86-64/imm.config:/home/build/immortalwrt/.config" \
+            -v "${{ github.workspace }}/x86-64/24.10/build.sh:/home/build/immortalwrt/build.sh" \
+            -e PROFILE=$profile \
+            -e INCLUDE_DOCKER=no \
+            immortalwrt/imagebuilder:x86-64-openwrt-24.10.0-rc3 /bin/bash /home/build/immortalwrt/build.sh
 
       - name: Generate Firmware SHA-256
         run: |
@@ -60,12 +52,8 @@ jobs:
 
       - name: Create info
         run: |
-          if [ "${{ github.event.inputs.include_docker }}" == "yes" ]; then
-            extra_content="#### 默认带docker"
-            echo -e "\n $extra_content" >> ${{ github.workspace }}/info.md
-          else
-            echo -e "NO docker"
-          fi
+          echo "#### ImmortalWrt x86-64 自动编译版本" > ${{ github.workspace }}/info.md
+          echo "#### 编译时间：$(date '+%Y-%m-%d %H:%M:%S')" >> ${{ github.workspace }}/info.md
 
       - name: Create GitHub Release Info
         uses: softprops/action-gh-release@v2.1.0
@@ -88,4 +76,3 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
